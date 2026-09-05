@@ -8,10 +8,10 @@ import prisma from "../../../shared/prisma";
 import { userSearchableFields } from "./user.constant";
 
 import { Prisma, UserRole, UserStatus } from "@prisma/client";
-import { optimizeAndSaveImage } from "@/app/utils/imageOptimizer";
-import { generateUserSlug } from "@/app/utils/generateUserSlug";
-import { IOptions, paginationHelper } from "@/app/helpers/paginationHelper";
-import ApiError from "@/app/errors/ApiError";
+import { optimizeAndSaveImage } from "../../../app/utils/imageOptimizer";
+import { generateUserSlug } from "../../../app/utils/generateUserSlug";
+import { IOptions, paginationHelper } from "../../../app/helpers/paginationHelper";
+import ApiError from "../../../app/errors/ApiError";
 import { StatusCodes } from "http-status-codes";
 
 

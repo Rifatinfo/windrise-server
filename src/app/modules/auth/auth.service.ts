@@ -5,15 +5,15 @@ import ApiError from "../../errors/ApiError";
 import { StatusCodes } from "http-status-codes";
 
 import { Secret } from "jsonwebtoken";
-import { envVars } from "@/config";
-import { jwtHelper } from "@/app/helpers/jwtHelpers";
+import { envVars } from "../../../config";
+import { jwtHelper } from "../../../app/helpers/jwtHelpers";
 import { UserStatus } from "@prisma/client";
-import { sendEmail } from "@/app/utils/sendEmail";
+import { sendEmail } from "../../../app/utils/sendEmail";
 import { randomInt } from "crypto";
 import {
   buildLoginOtpEmailHtml,
   buildLoginOtpEmailText,
-} from "@/app/utils/otpEmail";
+} from "../../../app/utils/otpEmail";
 import {
   OTP_LENGTH,
   OTP_MAX_ATTEMPTS,
@@ -21,7 +21,7 @@ import {
   OTP_REQUIRED_ROLES,
   OTP_RESEND_COOLDOWN_SECONDS,
   OTP_VALID_MINUTES,
-} from "@/config/otp.config";
+} from "../../../config/otp.config";
 
 
 const convertToMs = (time: string): number => {

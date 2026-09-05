@@ -1,4 +1,4 @@
-import { prisma } from "@/shared";
+import { prisma } from "../../shared";
 import slugify from "slugify";
 
 export const generateUniqueSlug = async (

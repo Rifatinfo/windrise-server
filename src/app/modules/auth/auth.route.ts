@@ -6,7 +6,7 @@ import {
     authRateLimiter,
     otpResendRateLimiter,
     otpVerifyRateLimiter,
-} from '@/app/middlewares/rateLimiter';
+} from '../../../app/middlewares/rateLimiter';
 import { UserRole } from '@prisma/client';
 import { GoogleOAuthController } from './googleOAuth.controller';
 

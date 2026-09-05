@@ -15,11 +15,11 @@ import ApiError from "../../errors/ApiError";
 import { StatusCodes } from "http-status-codes";
 
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
-import { generateUniqueSlug } from "@/app/utils/generateSlug";
-import { optimizeAndSaveImage, ensureDir } from "@/app/utils/imageOptimizer";
-import { IOptions, paginationHelper } from "@/app/helpers/paginationHelper";
-import { openai } from "@/app/helpers/open-router";
-import { AIResponse } from "@/app/types/ai";
+import { generateUniqueSlug } from "../../../app/utils/generateSlug";
+import { optimizeAndSaveImage, ensureDir } from "../../../app/utils/imageOptimizer";
+import { IOptions, paginationHelper } from "../../../app/helpers/paginationHelper";
+import { openai } from "../../../app/helpers/open-router";
+import { AIResponse } from "../../../app/types/ai";
 
 
 const createProduct = async (

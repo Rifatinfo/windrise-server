@@ -5,9 +5,9 @@ import { OrderStatus, PaymentStatus } from "@prisma/client";
 
 import ApiError from "../../errors/ApiError";
 
-import { generateInvoice } from "@/app/utils/invoice";
-import { saveInvoicePdf } from "@/app/utils/invoiceUrl";
-import { buildOrderEmailHtml, sendEmail } from "@/app/utils/sendEmail";
+import { generateInvoice } from "../../../app/utils/invoice";
+import { saveInvoicePdf } from "../../../app/utils/invoiceUrl";
+import { buildOrderEmailHtml, sendEmail } from "../../../app/utils/sendEmail";
 import { ISSLCommerz } from "../sslCommerz/sslCommerz.interface";
 import { SSLService } from "../sslCommerz/sslCommerz.service";
 

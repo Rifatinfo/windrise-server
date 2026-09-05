@@ -7,8 +7,8 @@ import {
   findOrCreateGoogleUser,
   generateGoogleUserTokens,
 } from "./googleOAuth.service";
-import { envVars } from "@/config";
-import { setAuthCookie } from "@/app/utils/setAuthCookie";
+import { envVars } from "../../../config";
+import { setAuthCookie } from "../../../app/utils/setAuthCookie";
 
 const googleAuth = catchAsync(async (req: Request, res: Response) => {
   const redirect = (req.query.redirect as string) || undefined;

@@ -3,7 +3,7 @@ import { Router } from "express";
 import { ProductController } from "./product.controller";
 import { createProductSchema, updateProductSchema } from "./product.validation";
 import multer from "multer";
-import { multerConfig } from "@/app/utils/fileUploader";
+import { multerConfig } from "../../../app/utils/fileUploader";
 
 const router = Router();
 const productUpload = multer(multerConfig).fields([

@@ -13,17 +13,17 @@ import {
 } from "@prisma/client";
 import { orderSearchableFields } from "./order.constant";
 
-import { generateInvoice } from "@/app/utils/invoice";
-import { saveInvoicePdf } from "@/app/utils/invoiceUrl";
-import { buildOrderEmailHtml, sendEmail } from "@/app/utils/sendEmail";
+import { generateInvoice } from "../../../app/utils/invoice";
+import { saveInvoicePdf } from "../../../app/utils/invoiceUrl";
+import { buildOrderEmailHtml, sendEmail } from "../../../app/utils/sendEmail";
 import {
   DEFAULT_DELIVERY_DAYS,
   DELIVERY_CHARGE,
   DELIVERY_DAYS,
-} from "@/config/delivery.config";
-import { parseDeliveryType } from "@/app/utils/parseDeliveryType";
+} from "../../../config/delivery.config";
+import { parseDeliveryType } from "../../../app/utils/parseDeliveryType";
 import { SSLService } from "../sslCommerz/sslCommerz.service";
-import { paginationHelper } from "@/app/helpers/paginationHelper";
+import { paginationHelper } from "../../../app/helpers/paginationHelper";
 import { CouponService } from "../coupon/coupon.service";
 
 

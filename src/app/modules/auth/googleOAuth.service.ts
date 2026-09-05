@@ -1,9 +1,9 @@
 import prisma from "../../../shared/prisma";
-import { envVars } from "@/config";
+import { envVars } from "../../../config";
 import { StatusCodes } from "http-status-codes";
 import ApiError from "../../errors/ApiError";
-import { generateUserSlug } from "@/app/utils/generateUserSlug";
-import { jwtHelper } from "@/app/helpers/jwtHelpers";
+import { generateUserSlug } from "../../../app/utils/generateUserSlug";
+import { jwtHelper } from "../../../app/helpers/jwtHelpers";
 import { Secret } from "jsonwebtoken";
 
 interface GoogleUserInfo {
