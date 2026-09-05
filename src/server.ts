@@ -6,21 +6,13 @@ import { AdsService } from "./app/modules/ads/ads.service";
 import { seedQueues } from "./app/modules/support/support.core";
 import { Server } from "http";
 
-const PORT = envVars.PORT;
-
-// const server = app.listen(PORT, () => {
-//   console.log(`Windrise Server is running on port ${PORT}`);
-//   console.log(`Environment: ${envVars.NODE_ENV}`);
-//   console.log(`Health check: http://localhost:${PORT}`);
-//   console.log(`API base: http://localhost:${PORT}/api/v1`);
-// });
-
 async function bootstrap() {
   // This variable will hold our server instance
   let server: Server;
 
   try {
     // Start the server
+
     server = app.listen(envVars.PORT, () => {
       console.log(`🚀 Server is running on http://localhost:${envVars.PORT}`);
       startRestoreStockCron();
@@ -46,36 +38,23 @@ async function bootstrap() {
     };
 
     // Handle unhandled promise rejections
-    // Graceful shutdown
-    process.on("SIGTERM", () => {
-      console.log("SIGTERM received. Shutting down gracefully...");
-      server.close(() => {
-        console.log("Process terminated.");
-      });
-    });
-
-    process.on("SIGINT", () => {
-      console.log("SIGINT received. Shutting down gracefully...");
-      server.close(() => {
-        console.log("Process terminated.");
-      });
-    });
-
-    // Unhandled rejection
-    process.on("unhandledRejection", (reason: any, promise) => {
-      console.error("Unhandled Rejection at:", promise, "reason:", reason);
-    });
-
-    // Uncaught exception
-    process.on("uncaughtException", (error) => {
-      console.error("Uncaught Exception:", error);
-      process.exit(1);
+    process.on("unhandledRejection", (error) => {
+      console.log(
+        "Unhandled Rejection is detected, we are closing our server...",
+      );
+      if (server) {
+        server.close(() => {
+          console.log(error);
+          process.exit(1);
+        });
+      } else {
+        process.exit(1);
+      }
     });
   } catch (error) {
     console.error("Error during server startup:", error);
     process.exit(1);
   }
 }
-
 
 bootstrap();
