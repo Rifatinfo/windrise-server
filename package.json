@@ -4,7 +4,7 @@
   "description": "Production-ready REST API server for Windrise",
   "main": "dist/server.js",
   "engines": {
-    "node": "22.x"
+    "node": "24.x"
   },
   "prisma": {
     "schema": "prisma/schema"
