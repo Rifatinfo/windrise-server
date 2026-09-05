@@ -78,4 +78,13 @@ async function bootstrap() {
 }
 
 
-bootstrap();
+
+
+// On Vercel the entrypoint is invoked as a serverless function: it must export
+// a request handler, and nothing may bind a port. Exporting nothing is what
+// produced FUNCTION_INVOCATION_FAILED on every request.
+export default app;
+
+if (!process.env.VERCEL) {
+  bootstrap();
+}
