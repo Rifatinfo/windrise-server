@@ -21,7 +21,6 @@
     "db:push": "prisma db push --schema=./prisma/schema",
     "db:pull": "prisma db pull --schema=./prisma/schema",
     "db:studio": "prisma studio --schema=./prisma/schema",
-    "postinstall": "prisma generate --schema=./prisma/schema",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -69,7 +68,7 @@
     "@types/multer": "^1.4.12",
     "@types/node": "^22.7.0",
     "@types/nodemailer": "^6.4.16",
-    "prisma": "^8.0.0-rc.13",
+    "prisma": "^7.10.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
