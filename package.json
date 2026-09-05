@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "description": "Production-ready REST API server for Windrise",
   "main": "dist/server.js",
+  "engines": {
+    "node": "22.x"
+  },
   "prisma": {
     "schema": "prisma/schema"
   },
   "scripts": {
-     "dev": "ts-node-dev --respawn --transpile-only ./src/server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only ./src/server.ts",
     "build": "npm run db:generate && tsc",
     "start": "node dist/server.js",
     "db:generate": "prisma generate --schema=./prisma/schema",
