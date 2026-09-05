@@ -1,0 +1,23 @@
+model Coupon {
+  id    String     @id @default(cuid())
+  code  String     @unique
+  type  CouponType
+  value Float
+
+  minOrderAmount Float?
+  maxDiscount    Float?
+
+  usageLimit Int?
+  usedCount  Int  @default(0)
+
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("coupons")
+}

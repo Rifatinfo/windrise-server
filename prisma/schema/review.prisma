@@ -1,0 +1,49 @@
+// ============================================================================
+// Product reviews
+//
+// Only people who actually bought the product may review it. Eligibility is
+// proved against the order book rather than an account, because most orders on
+// this shop are placed as a guest — the phone number is the identity every
+// order carries, and it is what a customer can produce again months later.
+// ============================================================================
+
+model ProductReview {
+  id String @id @default(cuid())
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  /// The order that proved the customer bought this. Kept for audit — a review
+  /// whose order is later deleted stays, but stops pointing at nothing.
+  orderId String?
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  /// As the reviewer typed it. Shown on the product page, masked first when it
+  /// looks like a phone number or an email address.
+  name String
+
+  /// Last ten digits only, which is how the order module compares numbers.
+  /// Never returned to the storefront: it is the identity key, not content.
+  phone String
+
+  /// 1–5. Enforced in the service; the column is an int so the aggregate is
+  /// a plain average rather than a parse.
+  rating Int
+
+  body String
+
+  /// Relative upload paths, e.g. "/uploads/reviews/abc.webp". A scalar list
+  /// rather than a join table: they are read and written only as a set, and a
+  /// second query per review would cost more than it buys.
+  images String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// One review per product per customer. A shopper who buys the same item
+  /// twice still gets one voice, and a repeated submission updates rather than
+  /// stacking.
+  @@unique([productId, phone])
+  @@index([productId, createdAt])
+  @@map("product_reviews")
+}

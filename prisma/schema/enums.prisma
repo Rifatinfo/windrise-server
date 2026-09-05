@@ -1,0 +1,148 @@
+enum StockStatus {
+  IN_STOCK
+  OUT_OF_STOCK
+  LOW_STOCK
+}
+
+enum AuthType {
+  CREDENTIALS
+  GOOGLE
+}
+
+// ========= User Related ========//
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  SHOP_MANAGER
+  MEDIA_MANAGER
+  CUSTOMER_SUPPORT
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  DELETED
+}
+
+enum OrderStatus {
+  CONFIRMED
+  CANCELED
+  FAILED
+  EXPIRED
+
+  PLACED
+  PROCESSED
+  ON_THE_WAY
+  DELIVERED
+}
+
+// ========= Payment Related ========//
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  FAILED
+  CANCELED
+}
+
+enum PaymentMethod {
+  COD
+  ONLINE
+}
+
+enum DeliveryType {
+  DHAKA_CITY
+  OUTSIDE_DHAKA
+  DHAKA_SUBURB
+}
+
+enum ShipmentStatus {
+  ORDER_CONFIRMED
+  PACKAGE_SHIPPED
+  ARRIVED_AT_LOCAL_SORT_FACILITY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELED
+}
+
+// Shown in the Orders table's After-Sales column. NONE/COMPLETED are the
+// automatic states; RETURN/EXCHANGE are chosen by an admin.
+enum AfterSalesStatus {
+  NONE
+  COMPLETED
+  RETURN
+  EXCHANGE
+}
+
+// ========= Coupon Related ========//
+
+enum CouponType {
+  PERCENTAGE
+  FIXED
+}
+
+// ========= Return / Refund Related ========//
+
+enum ReturnReason {
+  WRONG_SIZE
+  DAMAGED_PRODUCT
+  WRONG_PRODUCT
+  CHANGED_MIND
+  NOT_AS_EXPECTED
+  OTHER
+}
+
+enum ReturnStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum RefundStatus {
+  PENDING
+  COMPLETED
+}
+
+// ========= Analytics Related ========//
+
+enum AnalyticsEventType {
+  PAGE_VIEW
+  PRODUCT_VIEW
+  ADD_TO_CART
+  CHECKOUT_START
+}
+
+// ========= Blog / Content Related ========//
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
+}
+
+enum BlogVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+/// Our own promo vs. a paid third-party placement.
+enum AdType {
+  INTERNAL
+  SPONSORED
+}
+
+enum AdStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  SCHEDULED
+  EXPIRED
+}
+
+enum AdEventType {
+  IMPRESSION
+  CLICK
+}

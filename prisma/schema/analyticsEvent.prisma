@@ -1,0 +1,14 @@
+model AnalyticsEvent {
+  id String @id @default(cuid())
+
+  type      AnalyticsEventType
+  sessionId String
+  productId String?
+  path      String?
+
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@index([sessionId])
+  @@map("analytics_events")
+}

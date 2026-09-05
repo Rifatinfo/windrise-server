@@ -1,0 +1,35 @@
+/// A saved set of Pricing Calculator inputs, so a repeat product line can be
+/// priced the same way twice. Stores inputs only — every figure on screen is
+/// recomputed from them.
+model PricingTemplate {
+  id          String  @id @default(cuid())
+  name        String
+  productName String?
+  currency    String  @default("BDT")
+
+  /// Cost lines as [{ id, label, amount }] — custom rows live here too, so a
+  /// template can carry whatever cost structure the product needed.
+  costs Json
+
+  platformFee     Float  @default(0)
+  platformFeeMode String @default("PERCENT")
+
+  marginMode   String @default("MARGIN")
+  targetMargin Float  @default(40)
+  taxPercent   Float  @default(0)
+
+  roundTo            Float  @default(0)
+  minSellingPrice    Float?
+  maxDiscountPercent Float  @default(0)
+  pricingStrategy    String @default("VALUE_BASED")
+  recommendedMargin  Float  @default(40)
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+  @@map("pricing_templates")
+}

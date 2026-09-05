@@ -1,0 +1,167 @@
+/// A post in the storefront blog, edited from Dashboard → Content → Blogs.
+model BlogPost {
+  id      String @id @default(cuid())
+  title   String
+  slug    String @unique
+  /// Short summary for the blog index; also the fallback meta description.
+  excerpt String?
+  /// Optional pull-quote shown above the post body. Empty means the reader
+  /// never sees a highlight block at all, so leaving it blank is the default.
+  highlight String?
+  /// Sanitized HTML from the rich text editor.
+  content String?
+
+  status     BlogStatus     @default(DRAFT)
+  visibility BlogVisibility @default(PUBLIC)
+
+  /// When the post goes (or went) live. Drives SCHEDULED vs PUBLISHED.
+  publishedAt   DateTime?
+  featuredImage String?
+
+  // ---- Author: either a staff account, or a one-off name/photo ----
+  authorId           String?
+  author             User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  customAuthorName   String?
+  customAuthorAvatar String?
+
+  categoryId String?
+  category   BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags       BlogTag[]
+
+  // ---- SEO metafields ----
+  metaTitle       String?
+  metaDescription String?
+  focusKeyword    String?
+  keywords        String[] @default([])
+  canonicalUrl    String?
+  /// 0-100, recomputed from the SEO checklist on every save.
+  seoScore        Int      @default(0)
+
+  views         Int     @default(0)
+  isFeatured    Boolean @default(false)
+  allowComments Boolean @default(true)
+  showAds       Boolean @default(true)
+  comments BlogComment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@map("blog_posts")
+}
+
+model BlogCategory {
+  id    String     @id @default(cuid())
+  name  String     @unique
+  slug  String     @unique
+  posts BlogPost[]
+  /// Ads targeted at this category only.
+  ads   Ad[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("blog_categories")
+}
+
+model BlogTag {
+  id    String     @id @default(cuid())
+  name  String     @unique
+  slug  String     @unique
+  posts BlogPost[]
+
+  createdAt DateTime @default(now())
+
+  @@map("blog_tags")
+}
+
+/// A slot on the blog where an ad can render. The five built-in slots are
+/// seeded on boot; teams can add their own, which is why this is a table
+/// rather than an enum.
+model AdPlacement {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  name        String
+  description String?
+
+  /// Creative size hint shown in the editor and on the Placements board.
+  width    Int?
+  height   Int?
+  /// Native slots flow with the article instead of using a fixed size.
+  isNative Boolean @default(false)
+
+  /// Built-in slots cannot be deleted.
+  isSystem  Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  ads Ad[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ad_placements")
+}
+
+/// A creative booked into a placement. Posts opt in through `showAds`.
+model Ad {
+  id   String @id @default(cuid())
+  name String
+  type AdType @default(INTERNAL)
+
+  /// Only meaningful for SPONSORED ads.
+  sponsorName  String?
+  sponsorEmail String?
+
+  placementId String?
+  placement   AdPlacement? @relation(fields: [placementId], references: [id], onDelete: SetNull)
+
+  status AdStatus @default(DRAFT)
+
+  imageUrl     String?
+  /// Raw embed for networks that hand you a snippet instead of an image.
+  htmlSnippet  String?
+  targetUrl    String?
+  openInNewTab Boolean @default(true)
+
+  /// Higher wins when several ads compete for the same slot.
+  priority     Int  @default(50)
+  /// Times one visitor may see this ad per day. Null means no cap.
+  frequencyCap Int?
+
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+
+  /// Empty means every category; otherwise the ad only shows on these.
+  categories BlogCategory[]
+
+  startsAt DateTime?
+  endsAt   DateTime?
+
+  /// Lifetime rollups. Windowed figures come from `events`.
+  impressions Int @default(0)
+  clicks      Int @default(0)
+  events      AdEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, placementId])
+  @@map("ads")
+}
+
+/// One row per impression or click, so the dashboard can report a 30-day
+/// window and compare it against the previous one.
+model AdEvent {
+  id   String      @id @default(cuid())
+  adId String
+  ad   Ad          @relation(fields: [adId], references: [id], onDelete: Cascade)
+  type AdEventType
+
+  createdAt DateTime @default(now())
+
+  @@index([adId, type, createdAt])
+  @@index([type, createdAt])
+  @@map("ad_events")
+}

@@ -1,0 +1,323 @@
+// ============================================================================
+// Human support
+//
+// The inbox behind the Support dashboard. Every conversation a person handles
+// lands here regardless of where it came from — the Windee widget on the site,
+// a Messenger thread, and later WhatsApp/Instagram/Email — so an agent works
+// one list rather than one tab per network.
+//
+// Two ideas hold it together:
+//
+//  1. **A conversation is channel-agnostic.** `SupportConversation` carries the
+//     queue, the assignment, the status and the transcript; `channel` plus
+//     `externalId` are the only channel-specific parts. Adding WhatsApp later
+//     means a new adapter, not a new inbox.
+//  2. **The customer is a contact, not a user.** Most people who write in are
+//     signed out, and a Messenger sender is never a site account. `SupportContact`
+//     is the identity we actually have, with `userId` filled in opportunistically
+//     so order history can be shown when we do know who they are.
+// ============================================================================
+
+/// Where a conversation reaches us.
+///
+/// WHATSAPP/INSTAGRAM/EMAIL/COMMENTS are declared but not yet wired to a
+/// provider — the dashboard lists them so the sections are in place for the
+/// next phase, and they simply hold no conversations until then.
+enum SupportChannel {
+  /// The Windee widget on the storefront.
+  WINDEE
+  MESSENGER
+  WHATSAPP
+  INSTAGRAM
+  EMAIL
+  COMMENTS
+}
+
+enum SupportConversationStatus {
+  /// Waiting for someone to pick it up.
+  IN_QUEUE
+  /// Claimed by an agent and being handled.
+  WITH_AGENT
+  /// Finished. Kept for history and reporting.
+  CLOSED
+}
+
+enum SupportPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+/// What the agent's own status dropdown is set to.
+///
+/// Only AVAILABLE agents are offered work by the assignment rules; the rest
+/// still see the inbox but are skipped when counting who can take a queue.
+enum SupportAgentPresence {
+  AVAILABLE
+  BUSY
+  AWAY
+  OFFLINE
+}
+
+/// Who wrote a line of the transcript.
+enum SupportMessageAuthor {
+  CUSTOMER
+  AGENT
+  /// Windee, before the handoff. Replayed so the agent sees what was already said.
+  BOT
+  /// Assignment, transfer, close — rendered as a centred note, not a bubble.
+  SYSTEM
+}
+
+/// Something that happened to a conversation, for the audit trail.
+enum SupportEventType {
+  CREATED
+  QUEUED
+  ASSIGNED
+  TRANSFERRED
+  PRIORITY_CHANGED
+  TAGGED
+  UNTAGGED
+  CLOSED
+  REOPENED
+}
+
+/// A member of staff who works the inbox.
+///
+/// The account itself is an ordinary `User` with the CUSTOMER_SUPPORT role
+/// (admins create those through the existing staff endpoints); this row holds
+/// only what the inbox needs — whether they are at their desk and how much work
+/// they can hold at once.
+model SupportAgent {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  presence SupportAgentPresence @default(OFFLINE)
+
+  /// How many open conversations auto-assignment will hand this agent. Manual
+  /// claims are never blocked by it — an agent may always take one more.
+  maxConcurrent Int @default(5)
+
+  /// Free-text line under the name in the dashboard header, e.g. "Support Agent".
+  title String?
+
+  /// Last time the agent's browser reported in. Used to age out a presence that
+  /// was left on AVAILABLE when the tab was closed.
+  lastSeenAt DateTime?
+
+  conversations     SupportConversation[] @relation("AssignedAgent")
+  closedConversations SupportConversation[] @relation("ClosedByAgent")
+  messages          SupportMessage[]
+  events            SupportEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([presence])
+  @@map("support_agents")
+}
+
+/// A named bucket conversations wait in — General, Order Support, Product Support.
+model SupportQueue {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+
+  description String?
+
+  /// The three shipped buckets can be renamed but not deleted, so a
+  /// conversation can never be left without somewhere to sit.
+  isSystem  Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  conversations SupportConversation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("support_queues")
+}
+
+/// The person on the other end, as known on one channel.
+///
+/// The same human writing from Messenger and from the website is two contacts
+/// until something links them — a matching phone, or a signed-in session. That
+/// is deliberate: merging on a guessed match would show one customer another
+/// customer's orders.
+model SupportContact {
+  id      String         @id @default(cuid())
+  channel SupportChannel
+
+  /// The channel's own id for this person: a Messenger PSID, or the widget's
+  /// visitorId. Unique per channel, which is what makes an inbound webhook
+  /// idempotent.
+  externalId String
+
+  name      String?
+  email     String?
+  phone     String?
+  avatarUrl String?
+  locale    String?
+  /// Free-text, as the channel reports it, e.g. "Dhaka, Bangladesh".
+  location  String?
+
+  /// Set when we can prove who this is — they were signed in, or the phone
+  /// matches an account. Drives the Recent Orders panel.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  conversations SupportConversation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([channel, externalId])
+  @@index([userId])
+  @@index([phone])
+  @@map("support_contacts")
+}
+
+model SupportConversation {
+  id String @id @default(cuid())
+
+  /// Human-facing reference shown in the panel, e.g. "TKT-250520-0012".
+  ticketNo String @unique
+
+  channel SupportChannel
+  status  SupportConversationStatus @default(IN_QUEUE)
+  priority SupportPriority          @default(MEDIUM)
+
+  contactId String
+  contact   SupportContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  queueId String?
+  queue   SupportQueue? @relation(fields: [queueId], references: [id], onDelete: SetNull)
+
+  assignedAgentId String?
+  assignedAgent   SupportAgent? @relation("AssignedAgent", fields: [assignedAgentId], references: [id], onDelete: SetNull)
+
+  /// The Windee thread this was handed off from, when the channel is WINDEE.
+  /// One-to-one: a session hands off once, and closing the widget deletes the
+  /// session, which detaches rather than destroys the support record.
+  chatSessionId String?      @unique
+  chatSession   ChatSession? @relation(fields: [chatSessionId], references: [id], onDelete: SetNull)
+
+  /// The channel's thread id — for Messenger this is the PSID we send replies
+  /// to. Null for WINDEE, where `chatSessionId` plays the same role.
+  externalId String?
+
+  subject String?
+
+  /// Denormalised so the conversation list can be rendered from one query
+  /// instead of a per-row lookup of the newest message.
+  lastMessageAt      DateTime @default(now())
+  lastMessagePreview String   @default("")
+
+  /// Customer lines the assigned agent has not opened yet; drives the unread dot.
+  unreadForAgent Int @default(0)
+
+  /// When an agent first replied. `firstResponseAt - createdAt` is the response
+  /// time the dashboard averages.
+  firstResponseAt DateTime?
+
+  closedAt      DateTime?
+  closedById    String?
+  closedByAgent SupportAgent? @relation("ClosedByAgent", fields: [closedById], references: [id], onDelete: SetNull)
+
+  messages SupportMessage[]
+  events   SupportEvent[]
+  tags     SupportConversationTag[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, lastMessageAt])
+  @@index([channel, status])
+  @@index([queueId, status])
+  @@index([assignedAgentId, status])
+  @@index([contactId])
+  @@index([externalId])
+  @@map("support_conversations")
+}
+
+model SupportMessage {
+  id             String              @id @default(cuid())
+  conversationId String
+  conversation   SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  author  SupportMessageAuthor
+  /// Set when `author` is AGENT.
+  agentId String?
+  agent   SupportAgent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
+
+  body String
+
+  /// Uploaded files and images: `[{ url, name, mime, size }]`.
+  attachments Json?
+
+  /// A note only staff can see. Never delivered to the channel.
+  isInternalNote Boolean @default(false)
+
+  /// The channel's message id. Messenger redelivers webhooks on retry, so this
+  /// is what makes ingestion idempotent. Unique where present — Postgres allows
+  /// many NULLs, which is exactly right for messages we originated.
+  externalId String? @unique
+
+  /// Set once the channel confirms it went out; null while sending, and a
+  /// `deliveryError` alongside it when the provider rejected the send.
+  deliveredAt   DateTime?
+  deliveryError String?
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("support_messages")
+}
+
+/// Audit trail: who assigned, transferred, re-prioritised or closed what.
+model SupportEvent {
+  id             String              @id @default(cuid())
+  conversationId String
+  conversation   SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  type SupportEventType
+
+  /// Null when the system acted on its own, e.g. the Windee handoff.
+  actorId String?
+  actor   SupportAgent? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  /// Shape depends on `type`: `{ from, to }` for a transfer, `{ tag }` for a tag.
+  meta Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("support_events")
+}
+
+model SupportTag {
+  id    String @id @default(cuid())
+  name  String @unique
+  color String @default("#6366f1")
+
+  conversations SupportConversationTag[]
+
+  createdAt DateTime @default(now())
+
+  @@map("support_tags")
+}
+
+model SupportConversationTag {
+  conversationId String
+  conversation   SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  tagId String
+  tag   SupportTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([conversationId, tagId])
+  @@map("support_conversation_tags")
+}

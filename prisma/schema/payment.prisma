@@ -1,0 +1,32 @@
+model Payment {
+  id String @id @default(cuid())
+
+  // Foreign key
+  orderId       String  @unique
+  order         Order   @relation("OrderPayment", fields: [orderId], references: [id], onDelete: Cascade)
+  orderNo       String  @unique
+  transactionId String  @unique
+  validationId  String?
+  bankTranId    String?
+
+  paymentStatus      PaymentStatus @default(UNPAID)
+  gatewayStatus      String?
+  paymentMethod      String?
+  cardType           String?
+  cardIssuer         String?
+  paymentGatewayData Json?
+  amount             Decimal       @db.Decimal(10, 2)
+  storeAmount        Decimal?      @db.Decimal(10, 2)
+  currency           String        @default("BDT")
+  currencyAmount     Decimal?      @db.Decimal(10, 2)
+
+  riskLevel   String?
+  riskTitle   String?
+  invoiceUrl  String?
+  paidAt      DateTime?
+  cancelledAt DateTime?
+  failedAt    DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@map("payments")
+}

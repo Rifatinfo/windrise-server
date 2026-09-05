@@ -1,0 +1,44 @@
+// ============================================================================
+// Blog comments
+//
+// Open to everyone: a reader does not need an account to join the conversation.
+// A signed-in reader is recognised — their name and avatar come from the
+// account rather than a form — while a guest supplies a name and an email.
+// ============================================================================
+
+model BlogComment {
+  id String @id @default(cuid())
+
+  postId String
+  post   BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  /// The comment being replied to. Threads are one level deep by design: a
+  /// reply to a reply is attached to the same top-level comment, which keeps
+  /// the conversation readable on a phone instead of marching off the right
+  /// edge.
+  parentId String?
+  parent   BlogComment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  BlogComment[] @relation("CommentThread")
+
+  /// Set when the commenter was signed in. Their name and avatar are then read
+  /// from the account at display time, so a later profile change is reflected.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  /// Captured at the time of writing. For a signed-in reader this is a snapshot
+  /// of their account name; for a guest it is what they typed.
+  name String
+
+  /// Collected, never published — the form says as much. Used only to identify
+  /// repeat commenters and for moderation.
+  email String
+
+  body String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId, createdAt])
+  @@index([parentId])
+  @@map("blog_comments")
+}

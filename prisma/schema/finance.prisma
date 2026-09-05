@@ -1,0 +1,62 @@
+/// A bucket the business groups its spending into. Seeded with a default set
+/// on first use; admins can add their own and remove ones they don't use.
+model ExpenseCategory {
+  id    String @id @default(cuid())
+  name  String @unique
+  /// Hex colour for the breakdown bar and the log's chips.
+  color String @default("#6366f1")
+
+  /// Built-in buckets can be renamed but not deleted.
+  isSystem  Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  investments Investment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("expense_categories")
+}
+
+/// One logged cost. Everything on the Financial Overview is derived from
+/// these rows plus the revenue figure for the month.
+model Investment {
+  id     String @id @default(cuid())
+  amount Float
+
+  description String
+  /// When the money was actually spent, which is what the month buckets use.
+  spentAt     DateTime
+  vendor      String?
+
+  categoryId String
+  category   ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  /// Optional link to the product this cost was for.
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([spentAt])
+  @@index([categoryId])
+  @@map("investments")
+}
+
+/// Revenue an admin has confirmed for a month. Absent months fall back to
+/// what the orders table actually shows, so the page is never blank.
+model FinanceRevenue {
+  id String @id @default(cuid())
+  /// "YYYY-MM"
+  month  String @unique
+  amount Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("finance_revenue")
+}

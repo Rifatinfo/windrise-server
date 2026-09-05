@@ -1,0 +1,36 @@
+/// Single row of store-wide configuration, edited from the admin Settings page.
+/// Always read/written through `getStoreSettings()`, which creates the row on
+/// first use, so there is exactly one record with id "singleton".
+model StoreSettings {
+  id String @id @default("singleton")
+
+  // ---- Store profile (shown to customers on emails / invoices) ----
+  storeName    String  @default("Windrise")
+  supportEmail String?
+  supportPhone String?
+  storeAddress String?
+
+  // ---- Shipping: per-zone rates the storefront checkout charges ----
+  shippingDhakaCity     Float  @default(60)
+  shippingDhakaSuburb   Float  @default(100)
+  shippingOutsideDhaka  Float  @default(130)
+  /// Order subtotal at or above which delivery is free. Null disables it.
+  freeShippingThreshold Float?
+
+  // ---- Inventory ----
+  /// Units at or below which a variant counts as low stock.
+  lowStockThreshold Int @default(10)
+
+  // ---- Orders ----
+  /// Prefix shown before generated order numbers on invoices/emails.
+  orderNumberPrefix String @default("#")
+
+  // ---- Notifications ----
+  notifyOrderPlaced Boolean @default(true)
+  notifyOrderStatus Boolean @default(true)
+  notifyLowStock    Boolean @default(true)
+
+  updatedAt DateTime @updatedAt
+
+  @@map("store_settings")
+}

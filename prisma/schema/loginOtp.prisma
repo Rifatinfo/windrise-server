@@ -1,0 +1,33 @@
+/// One-time login code for staff sign-ins (ADMIN, SHOP_MANAGER, MEDIA_MANAGER,
+/// CUSTOMER_SUPPORT). Issued after the password check succeeds; the session is
+/// only handed out once the code is verified.
+///
+/// Two clocks, deliberately different:
+///   - `expiresAt` (2 min) — after this the code stops being accepted.
+///   - `purgeAt`   (5 min) — after this the row itself is deleted, so codes do
+///                           not linger in the database.
+model LoginOtp {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  email String
+
+  /// bcrypt hash — the code itself is never stored.
+  codeHash String
+
+  /// Wrong guesses so far. The code is burned once this hits the cap.
+  attempts Int @default(0)
+
+  /// Set the moment the code is accepted, so it cannot be replayed.
+  consumedAt DateTime?
+
+  expiresAt DateTime
+  purgeAt   DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([purgeAt])
+  @@map("login_otps")
+}

@@ -1,0 +1,89 @@
+/// Who produced a turn in the transcript.
+enum ChatRole {
+  USER
+  ASSISTANT
+  /// The result of a tool the assistant invoked. Kept so a resumed session
+  /// replays with the same context the model originally had.
+  TOOL
+}
+
+enum ChatSessionStatus {
+  ACTIVE
+  /// Waiting on, or talking to, a person rather than Windee.
+  HANDED_OFF
+  CLOSED
+}
+
+/// One Windee conversation.
+///
+/// A visitor does not need an account: the widget mints a `visitorId` and keeps
+/// it in localStorage, so a guest can track an order or place one and still get
+/// their thread back after a reload. `userId` is filled in when the visitor
+/// happens to be signed in, which lets the model greet them by name.
+model ChatSession {
+  id        String @id @default(cuid())
+  visitorId String
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  /// Captured on the welcome screen, before the first message.
+  name  String?
+  phone String?
+
+  /// A write the assistant has proposed and the customer has not yet approved:
+  /// `{ kind: "create_order" | "cancel_order", payload, summary }`.
+  ///
+  /// Orders are placed and cancelled from here by an explicit confirm request,
+  /// never by the model. Asking the model to make a second "confirm" tool call
+  /// was not reliable — and a mis-set flag would have meant a real order — so
+  /// the commit path deliberately does not involve it at all.
+  pendingAction Json?
+
+  status   ChatSessionStatus @default(ACTIVE)
+  messages ChatMessage[]
+
+  /// The support ticket this thread was handed off to, once the visitor asked
+  /// for a person. Detaches rather than cascades when the widget is closed, so
+  /// the agent's record of the conversation survives.
+  supportConversation SupportConversation?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([visitorId, status])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  role    ChatRole
+  content String
+
+  /// The structured payload behind a rendered card — the order summary, the
+  /// product carousel, the quick replies. The text in `content` always stands
+  /// on its own, so a client that ignores this still shows a usable reply.
+  data Json?
+
+  /// Relative path of an image the visitor attached, e.g. "/uploads/chat/x.webp".
+  imageUrl String?
+
+  /// Set on TOOL rows so a replayed transcript can be paired back up with the
+  /// assistant turn that requested the call.
+  toolName   String?
+  toolCallId String?
+
+  /// The tool calls an ASSISTANT turn asked for, in the model's own format.
+  /// Without these the replayed thread loses every id the model was working
+  /// with — the product it had chosen, the draft it was about to place — and
+  /// it starts the task over on the customer's next message.
+  toolCalls Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([sessionId, createdAt])
+  @@map("chat_messages")
+}

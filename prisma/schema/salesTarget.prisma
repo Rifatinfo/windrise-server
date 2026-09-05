@@ -1,0 +1,10 @@
+model SalesTarget {
+  id           String   @id @default(cuid())
+  month        DateTime @unique
+  targetAmount Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sales_targets")
+}
